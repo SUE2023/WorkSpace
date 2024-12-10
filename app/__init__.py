@@ -12,6 +12,7 @@ from flask_mail import Mail
 from flask_moment import Moment
 from flask_babel import Babel, lazy_gettext as _l
 from config import Config
+from elasticsearch import Elasticsearch
 
 
 def get_locale():
@@ -82,6 +83,16 @@ def create_app(config_class=Config):
         app.logger.info('WorkSpace startup')
 
     return app
+
+
+def create_app(config_class=Config):
+    app = Flask(__name__)
+    app.config.from_object(config_class)
+    
+    #...
+    app.elasticsearch = Elasticsearch([app.config['ELASTICSEARCH_URL']]) \
+        if app.config['ELASTICSEARCH_URL'] else None
+
 
 
 from app import models
