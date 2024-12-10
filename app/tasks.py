@@ -8,6 +8,9 @@ from app.models import Task
 import sys
 import time
 from app.models import User, Post
+import json
+from flask import render_template
+from app.email import send_email
 
 app = create_app()
 app.app_context().push()
@@ -43,7 +46,15 @@ def export_posts(user_id):
             i += 1
             _set_task_progress(100 * i // total_posts)
 
-        # send email with data to user
+        """send email with data to user"""
+        send_email(
+            '[Microblog] Your blog posts',
+            sender=app.config['ADMINS'][0], recipients=[user.email],
+            text_body=render_template('email/export_posts.txt', user=user),
+            html_body=render_template('email/export_posts.html', user=user),
+            attachments=[('posts.json', 'application/json',
+                          json.dumps({'posts': data}, indent=4))],
+            sync=True)
     except Exception:
         """ handle unexpected errors"""
         _set_task_progress(100)
