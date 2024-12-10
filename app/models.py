@@ -154,6 +154,15 @@ class User(UserMixin, db.Model):
             {'reset_password': self.id, 'exp': time() + expires_in},
             current_app.config['SECRET_KEY'], algorithm='HS256')
 
+    def add_notification(self, name, data):
+        db.session.execute(self.notifications.delete().where(
+            Notification.name == name))
+        n = Notification(name=name, payload_json=json.dumps(data), user=self)
+        db.session.add(n)
+        return n
+
+
+
     @staticmethod
     def verify_reset_password_token(token):
         try:
