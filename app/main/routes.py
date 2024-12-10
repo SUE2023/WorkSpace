@@ -13,6 +13,8 @@ from app.main.forms import EditProfileForm, EmptyForm, PostForm
 from app.models import User, Post
 from app.translate import translate
 from app.main import bp
+from flask import g
+from app.main.forms import SearchForm
 
 
 @bp.before_app_request
@@ -153,3 +155,12 @@ def translate_text():
     return {'text': translate(data['text'],
                               data['source_language'],
                               data['dest_language'])}
+
+
+@bp.before_app_request
+def before_request():
+    if current_user.is_authenticated:
+        current_user.last_seen = datetime.now(timezone.utc) 
+        db.session.commit()
+        g.search_form = SearchForm()
+    g.locale = str(get_locale())
