@@ -1,15 +1,7 @@
-import time
+#!/usr/bin/env python3
+""" Task Module"""
 
-def example(seconds):
-    print('Starting task')
-    for i in range(seconds):
-        print(i)
-        time.sleep(1)
-    print('Task completed')import time
+from app import create_app
 
-def example(seconds):
-    print('Starting task')
-    for i in range(seconds):
-        print(i)
-        time.sleep(1)
-    print('Task completed')
+app = create_app()
+app.app_context().push()
