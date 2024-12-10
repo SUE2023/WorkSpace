@@ -8,13 +8,16 @@ from flask import request
 from flask import url_for
 from app import db
 from app.api.errors import bad_request
-
+from flask import abort
+from app.api.auth import token_auth
 
 @bp.route('/users/<int:id>', methods=['GET'])
+@token_auth.login_required
 def get_user(id):
     return db.get_or_404(User, id).to_dict()
 
 @bp.route('/users', methods=['GET'])
+@token_auth.login_required
 def get_users():
     page = request.args.get('page', 1, type=int)
     per_page = min(request.args.get('per_page', 10, type=int), 100)
@@ -22,6 +25,7 @@ def get_users():
                                    'api.get_users')
 
 @bp.route('/users/<int:id>/followers', methods=['GET'])
+@token_auth.login_required
 def get_followers(id):
     user = db.get_or_404(User, id)
     page = request.args.get('page', 1, type=int)
@@ -30,6 +34,7 @@ def get_followers(id):
                                    'api.get_followers', id=id)
 
 @bp.route('/users/<int:id>/following', methods=['GET'])
+@token_auth.login_required
 def get_following(id):
     user = db.get_or_404(User, id)
     page = request.args.get('page', 1, type=int)
@@ -56,7 +61,10 @@ def create_user():
                                                      id=user.id)}
 
 @bp.route('/users/<int:id>', methods=['PUT'])
+@token_auth.login_required
 def update_user(id):
+    if token_auth.current_user().id != id:
+        abort(403)
     user = db.get_or_404(User, id)
     data = request.get_json()
     if 'username' in data and data['username'] != user.username and \
