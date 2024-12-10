@@ -158,14 +158,6 @@ class User(UserMixin, db.Model):
             {'reset_password': self.id, 'exp': time() + expires_in},
             current_app.config['SECRET_KEY'], algorithm='HS256')
 
-    def add_notification(self, name, data):
-        db.session.execute(self.notifications.delete().where(
-            Notification.name == name))
-        n = Notification(name=name, payload_json=json.dumps(data), user=self)
-        db.session.add(n)
-        return n
-
-
 
     @staticmethod
     def verify_reset_password_token(token):
@@ -175,12 +167,38 @@ class User(UserMixin, db.Model):
         except Exception:
             return
         return db.session.get(User, id)
+
     def unread_message_count(self):
         last_read_time = self.last_message_read_time or datetime(1900, 1, 1)
         query = sa.select(Message).where(Message.recipient == self,
                                          Message.timestamp > last_read_time)
         return db.session.scalar(sa.select(sa.func.count()).select_from(
             query.subquery()))
+
+    def add_notification(self, name, data):
+        db.session.execute(self.notifications.delete().where(
+            Notification.name == name))
+        n = Notification(name=name, payload_json=json.dumps(data), user=self)
+        db.session.add(n)
+        return n
+
+    def launch_task(self, name, description, *args, **kwargs):
+        rq_job = current_app.task_queue.enqueue(f'app.tasks.{name}', self.id,
+                                                *args, **kwargs)
+        task = Task(id=rq_job.get_id(), name=name, description=description,
+                    user=self)
+        db.session.add(task)
+        return task
+
+    def get_tasks_in_progress(self):
+        query = self.tasks.select().where(Task.complete == False)
+        return db.session.scalars(query)
+
+    def get_task_in_progress(self, name):
+        query = self.tasks.select().where(Task.name == name,
+                                          Task.complete == False)
+        return db.session.scalar(query)
+
 
 
 @login.user_loader
