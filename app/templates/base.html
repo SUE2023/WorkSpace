@@ -157,6 +157,13 @@
         count.style.visibility = n ? 'visible' : 'hidden';
       }
 
+      function set_task_progress(task_id, progress) {
+            const progressElement = document.getElementById(task_id + '-progress');
+            if (progressElement) {
+                progressElement.innerText = progress;
+            }
+        }
+
 
       {% if current_user.is_authenticated %}
       function initialize_notifications() {
